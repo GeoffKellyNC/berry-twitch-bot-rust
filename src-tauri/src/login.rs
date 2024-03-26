@@ -1,8 +1,18 @@
+//! This module contains the functions for handling the Twitch login process.
+//! 
+//! It provides the `request_device_authorization` function that sends a request to the Twitch API to request device authorization.
+
 use reqwest;
 use serde::{Deserialize, Serialize};
 use colored::*;
 use berry_lib::file_sys::app_bin;
 
+
+/// The name of the device authentication file.
+const DEVICE_AUTH_FILE_NAME: &str = "devauth";
+
+
+// The request body for the device authorization request.
 #[derive(Serialize)]
 struct DeviceAuthRequest {
     client_id: String,
@@ -11,13 +21,37 @@ struct DeviceAuthRequest {
 
 
 
+/// The status of the device authorization. This is used for authorization token after the device has been authorized.
 pub enum DeviceAuthStatus {
+    /// The device is authorized.
     Authorized(app_bin::DeviceAuthBinary),
+    /// The device is pending authorization.
     Pending(String),
+    /// The device authorization has expired.
     InvalidCode(String),
+    /// The device authorization has been denied.
     InvalidRefreshToken(String),
 }
 
+
+
+
+/// Sends a request to the Twitch API to request device authorization.
+/// 
+/// # Returns
+/// 
+/// Returns a `DeviceAuthBinary` struct containing the device code, expiration time, interval, user code, and verification URI.
+/// 
+/// # Errors
+/// 
+/// Returns an error message if the request fails.
+/// 
+/// # Example
+/// 
+/// ```
+/// let device_auth = request_device_authorization().await;
+/// ```
+///     
 #[tauri::command]
 pub async fn request_device_authorization() -> Result<app_bin::DeviceAuthBinary, String> {
     println!("{}", "Requesting Device Authorization".green());
@@ -103,7 +137,11 @@ pub async fn request_device_authorization() -> Result<app_bin::DeviceAuthBinary,
                 true,
             );
 
-            Ok(response_body)
+            app_bin::write_to_file(&new_device_auth, DEVICE_AUTH_FILE_NAME , app_bin::FileCategory::Config)
+            .map_err(|e| e.to_string())?;
+
+
+            Ok(new_device_auth)
         }
         400 => {
             let response_body: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
