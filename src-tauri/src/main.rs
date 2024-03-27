@@ -4,6 +4,7 @@
 
 mod login;
 mod app_checks;
+mod config;
 
 
 fn main() {

@@ -24,6 +24,7 @@ pub struct AppConfigFile {
     pub scope: Vec<String>,
 }
 
+
 /// Represents the device authentication binary file.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeviceAuthBinary {
